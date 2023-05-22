@@ -37,13 +37,16 @@ export ASR_TOOLCHAIN_PATH={abs-path-to-toolchain}/gcc-arm-none-eabi-9-2019-q4-ma
 ### matter_build_example.sh
 build scripit for matter, for example:
 
-setup ASR IC:
+setup ASR BOARD:
 ```
-export ASR_IC=asr582x
+export ASR_BOARD=asr582x
 ```
 please make sure `ASR_TOOLCHAIN_PATH` is alreay export, then build lighting-app:
 ```
 ./matter_build_example.sh ./examples/lighting-app/asr out/example_app
 ```
 
+## factory bin
 
+ - bootloader
+ - ate

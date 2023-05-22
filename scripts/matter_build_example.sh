@@ -17,13 +17,13 @@
 #
 
 #default
-if [ -z "$ASR_IC" ]; then
-    echo "ASR_IC not set! default asr582x"
-    ASR_IC=asr582x
+if [ -z "$ASR_BOARD" ]; then
+    echo "ASR_BOARD not set! default asr582x"
+    ASR_BOARD=asr582x
 fi
 
-if [ "$ASR_IC" != "asr582x" ] && [ "$ASR_IC" != "asr595x" ]; then
-    echo "$ASR_IC not support!"
+if [ "$ASR_BOARD" != "asr582x" ] && [ "$ASR_BOARD" != "asr595x" ]; then
+    echo "$ASR_BOARD not support!"
     exit 1
 fi
 
@@ -33,14 +33,14 @@ if [ -z "$ASR_TOOLCHAIN_PATH" ]; then
 fi
 
 #arch
-if [ "$ASR_IC" = "asr582x" ]; then
+if [ "$ASR_BOARD" = "asr582x" ]; then
     ASR_ARCH=arm
-elif [ "$ASR_IC" = "asr595x" ]; then
+elif [ "$ASR_BOARD" = "asr595x" ]; then
     ASR_ARCH=riscv
 fi
 
 #SDK root
-ASR_SDK_ROOT=//third_party/connectedhomeip/third_party/asr/$ASR_IC
+ASR_SDK_ROOT=//third_party/connectedhomeip/third_party/asr/$ASR_BOARD
 
 # Build steps
 EXAMPLE_DIR=$1
@@ -52,13 +52,13 @@ USAGE="./scripts/examples/gn_asr_example.sh <AppRootFolder> <outputFolder> [<Bui
 optArgs="treat_warnings_as_errors=false "
 optArgs+="chip_use_transitional_commissionable_data_provider=false "
 optArgs+="custom_toolchain=\"//../../../config/asr/toolchain:asrtoolchain\" "
-optArgs+="asr_ic_family=\"$ASR_IC\" "
+optArgs+="asr_ic_family=\"$ASR_BOARD\" "
 optArgs+="target_cpu=\"$ASR_ARCH\" "
 optArgs+="asr_sdk_build_root=\"$ASR_SDK_ROOT\"  "
 optArgs+="mbedtls_target=\"$ASR_SDK_ROOT:asr_build\" "
 optArgs+="asr_toolchain_root=\"$ASR_TOOLCHAIN_PATH\" "
 
-if [ "$ASR_IC" == "asr582x" ] || [ "$ASR_IC" == "asr595x" ]; then
+if [ "$ASR_BOARD" == "asr582x" ] || [ "$ASR_BOARD" == "asr595x" ]; then
     optArgs+="chip_config_network_layer_ble=true "
 fi
 
@@ -82,8 +82,10 @@ if [ "$#" == "0" ]; then
             PIN code for PASE session establishment. (Default 20202021)
         chip_logging
             Enable Matter log. (Default true)
-        chip_use_factory
+        chip_enable_factory_data
             Use factory data from Flash. (Default false)
+        chip_enable_ota_requestor
+            Enable OTA requestor. (Default false)
     "
 elif [ "$#" -lt "2" ]; then
     echo "Invalid number of arguments
@@ -101,9 +103,9 @@ else
     ./scripts/examples/gn_build_example.sh $EXAMPLE_DIR $OUTPUT_DIR $optArgs
 
     #print stats
-    if [ "$ASR_IC" = "asr582x" ]; then
+    if [ "$ASR_BOARD" = "asr582x" ]; then
         $ASR_TOOLCHAIN_PATH/arm-none-eabi-size -A "$OUTPUT_DIR"/*.out
-    elif [ "$ASR_IC" = "asr595x" ]; then
+    elif [ "$ASR_BOARD" = "asr595x" ]; then
         $ASR_TOOLCHAIN_PATH/riscv-asr-elf-size -A "$OUTPUT_DIR"/*.out
     fi
 fi
