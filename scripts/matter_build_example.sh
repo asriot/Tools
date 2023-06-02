@@ -77,7 +77,7 @@ if [ "$#" == "0" ]; then
         chip_build_libshell
             Enable libshell support. (Default false)
         setupDiscriminator
-            Discriminatoor value used for BLE connexion. (Default 3840)
+            Discriminator value used for commission. (Default 3840)
         setupPinCode
             PIN code for PASE session establishment. (Default 20202021)
         chip_logging
@@ -86,6 +86,10 @@ if [ "$#" == "0" ]; then
             Use factory data from Flash. (Default false)
         chip_enable_ota_requestor
             Enable OTA requestor. (Default false)
+        chip_enable_additional_data_advertising
+            Enable additional data advertising. (Default false)
+        chip_enable_rotating_device_id
+            Enable rotating device id. (Default false)
     "
 elif [ "$#" -lt "2" ]; then
     echo "Invalid number of arguments

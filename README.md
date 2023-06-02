@@ -35,9 +35,7 @@ export ASR_TOOLCHAIN_PATH={abs-path-to-toolchain}/gcc-arm-none-eabi-9-2019-q4-ma
 ## scripts
 
 ### matter_build_example.sh
-build scripit for matter, for example:
-
-setup ASR BOARD:
+build scripit for matter, first put this file to `connectedhomeip` directory, then setup ASR BOARD:
 ```
 export ASR_BOARD=asr582x
 ```
@@ -45,6 +43,10 @@ please make sure `ASR_TOOLCHAIN_PATH` is alreay export, then build lighting-app:
 ```
 ./matter_build_example.sh ./examples/lighting-app/asr out/example_app
 ```
+
+## factory tool
+
+[matter factory tool](factory_tool/README.md) is designed to generate factory partitions for mass production.
 
 ## factory bin
 
