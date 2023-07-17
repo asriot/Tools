@@ -81,3 +81,5 @@ The output manufacturing binary file is `ASR_matter_factory.bin`.
 For ASR582X, the burning address is `0x101C1000`.
 
 For ASR595X, the burning address is `0x801C1000`.
+
+For ASR550X, the burning address is `0x101EE000`.
