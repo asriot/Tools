@@ -2,7 +2,7 @@
 
 ## toolchain
 
-### toolchain for ASR596X
+### toolchain for ASR595X
 ```
 cd toolchain
 ```
