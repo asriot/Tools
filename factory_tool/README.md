@@ -4,34 +4,7 @@ This tool is designed to generate factory partitions for mass production.
 
 ## Dependencies
 
-Please make sure you have had the following tools before using the generator
-tool.
-
-* [CHIP Tool](https://github.com/project-chip/connectedhomeip/blob/master/examples/chip-tool)
-
-* [SPAKE2P Parameters Tool](https://github.com/project-chip/connectedhomeip/tree/master/scripts/tools/spake2p)
-
-### [Build and setup tools in Matter SDK](https://github.com/project-chip/connectedhomeip/blob/master/docs/guides/BUILDING.md#build-for-the-host-os-linux-or-macos)
-
-#### Build tools
-
-Using the following commands to generate chip-tool, spake2p and chip-cert at
-    `path/to/connectedhomeip/build/out/host`.
-
-```
-cd path/to/connectedhomeip
-source scripts/activate.sh
-gn gen build/out/host
-ninja -C build/out/host
-```
-
-#### Add the tools path to $PATH
-
-```
-export PATH="$PATH:path/to/connectedhomeip/build/out/host"
-```
-
-### Install python dependencies
+Install python dependencies
 ```
 cd path/to/Tools/factory_tool
 python3 -m pip install -r requirements.txt
