@@ -29,7 +29,7 @@ For example:
 
 ## Usage
 
-`./ASR_matter_factory_tool -h` lists all the optional arguments.
+`python ASR_matter_factory_tool.py -h` lists all the optional arguments.
 
 The following commands generate factory partitions using the default testing PAI
 keys, certificates, and CD in Matter project, Vendor ID: 0xFFF2, Product ID: 0x8001,
@@ -37,15 +37,17 @@ Discriminator: 3434, and Passcode: 99663300.
 You can make it using yours instead in real production.
 
 ```
-./ASR_matter_factory_tool --discriminator 3434 --passcode 99663300 \
+python ASR_matter_factory_tool.py --discriminator 3434 --passcode 99663300 \
 --dac-cert  ../credentials/test/attestation/Chip-Test-DAC-FFF2-8001-0008-Cert.pem \
 --dac-key  ../credentials/test/attestation/Chip-Test-DAC-FFF2-8001-0008-Key.pem \
 --pai-cert  ../credentials/test/attestation/Chip-Test-PAI-FFF2-8001-Cert.der \
 --cd  ../credentials/test/certification-declaration/Chip-Test-CD-FFF2-8001.der \
---vendor-id 0xFFF2 --vendor-name ASR --product-id 0x8001 --product-name asr5821
+--vendor-id 0xFFF2 --vendor-name ASR --product-id 0x8001 --product-name asr5821 \
+--qrcode
 ```
 
 The output manufacturing binary file is `ASR_matter_factory.bin`.
+The QR image file is `ASR_matter_QRcode.png`.
 
 ## Flashing the manufacturing binary
 
