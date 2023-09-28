@@ -2,6 +2,8 @@
 
 This tool is designed to generate factory partitions for mass production.
 
+If your connectedhomeip SDK is `ASR_MATTER_V1.1`, please use [Tools v1.1](https://github.com/asriot/Tools/releases/tag/v1.1).
+
 ## Dependencies
 
 Install python dependencies
@@ -53,7 +55,9 @@ The QR image file is `ASR_matter_QRcode.png`.
 
 `DOGO` tool is used to flash the manufacturing binary to the board.
 
-For ASR582X, the burning address is `0x101C1000`.
+For ASR582X(4M), the burning address is `0x101C1000`.
+
+For ASR582X(2M), the burning address is `0x101FF000`.
 
 For ASR595X, the burning address is `0x801C1000`.
 
