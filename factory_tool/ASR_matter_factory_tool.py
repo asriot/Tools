@@ -160,6 +160,21 @@ FACTORY_DATA = {
         'encoding': 'string',
         'value': None,
     },
+    'product-url': {
+        'type': 'data',
+        'encoding': 'string',
+        'value': None,
+    },
+    'product-label': {
+        'type': 'data',
+        'encoding': 'string',
+        'value': None,
+    },
+    'part-number': {
+        'type': 'data',
+        'encoding': 'string',
+        'value': None,
+    },
     'chip-id': {
         'type': 'data',
         'encoding': 'string',
@@ -196,6 +211,9 @@ def validate_args(args):
     check_str_range(args.serial_num, 1, 32, 'Serial number')
     check_int_range(args.hw_ver, 0x0000, 0xFFFF, 'Hardware version')
     check_str_range(args.hw_ver_str, 1, 32, 'Hardware version string')
+    check_str_range(args.product_url, 1, 256, 'Product URL')
+    check_str_range(args.product_label, 1, 64, 'Product Label')
+    check_str_range(args.part_number, 1, 32, 'Part Number')
 
     if not os.path.isdir(args.out):
         os.makedirs(args.out, exist_ok=True)
@@ -298,6 +316,12 @@ def populate_factory_data(args, spake2p_params):
         FACTORY_DATA['hardware-ver']['value'] = args.hw_ver
     if args.hw_ver_str is not None:
         FACTORY_DATA['hw-ver-str']['value'] = args.hw_ver_str
+    if args.product_url is not None:
+        FACTORY_DATA['product-url']['value'] = args.product_url
+    if args.product_label is not None:
+        FACTORY_DATA['product-label']['value'] = args.product_label
+    if args.part_number is not None:
+        FACTORY_DATA['part-number']['value'] = args.part_number
 
     FACTORY_DATA['version']['value'] = args.version
     # config, bit 1: nokey
@@ -467,6 +491,9 @@ def main():
     parser.add_argument('--serial-num', type=str, required=False, default="sn1234", help='Serial number')
     parser.add_argument('--hw-ver', type=any_base_int, required=False, default=0x100, help='Hardware version')
     parser.add_argument('--hw-ver-str', type=str, required=False, default="hwASR5821", help='Hardware version string')
+    parser.add_argument('--product-url', type=str, required=False, default="http://www.asrmicro.com/en/goods/proinfo/36.html", help='Product URL')
+    parser.add_argument('--product-label', type=str, required=False, default="ASR582X is a highly integrated combo SoC", help='Product Label')
+    parser.add_argument('--part-number', type=str, required=False, default="abc", help='Part Number')
 
     parser.add_argument("--rd-id-uid", type=str, required=False, default="1234567890abcdef1234567890abcdef",
                         help=('128-bit unique identifier for generating rotating device identifier, '
