@@ -34,6 +34,7 @@ import struct
 import qrcode
 import platform
 from ecdsa.curves import NIST256p
+from Crypto.Cipher import AES
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(THIS_DIR, 'setup_payload'))
@@ -45,7 +46,6 @@ INVALID_PASSCODES = [00000000, 11111111, 22222222, 33333333, 44444444, 55555555,
 ASR_PARTITION_CSV = 'ASR_matter_partition.csv'
 ASR_FACTORY_CSV = 'ASR_csv_table.csv'
 ASR_FACTORY_BIN = 'ASR_matter_factory.bin'
-ASR_FACTORY_BIN_NO_KEY = 'ASR_matter_factory_nokey.bin'
 ASR_FACTORY_QR = 'ASR_matter_QRcode.png'
 ASR_FACTORY_QR_TXT = 'ASR_matter_QRcode.txt'
 ASR_DAC_CERT = 'ASR_matter_dacCert.bin'
@@ -378,14 +378,35 @@ def generate_matter_csv(args):
 
     logging.info('Generated the factory partition csv file : {}'.format(os.path.abspath(out_csv_filename)))
 
+def aes_ECB_Encrypt(data , aes_key):
+    size = len(data)
+    # In case a aes128_key is given the data will be encrypted
+    # Always add a padding to be 16 bytes aligned
+    padding_len = size % 16
+    padding_len = 16 - padding_len
+    padding_bytes = bytearray(padding_len)
+    data += padding_bytes
+    cipher = AES.new(key=bytes.fromhex(aes_key), mode=AES.MODE_ECB)
+    return cipher.encrypt(data)
+
+def encrypt_file(in_file, aes_key , out_file):
+    with open(in_file, 'rb') as f:
+        in_data = f.read()
+
+    out_data = aes_ECB_Encrypt(in_data, aes_key)
+
+    with open(out_file, 'wb') as f:
+        f.write(out_data)
+
 def generate_factory_bin(args):
 
     in_csv_filename = os.path.join(args.out, ASR_PARTITION_CSV)
 
+    global ASR_FACTORY_BIN
     if args.nokey:
-       FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN_NO_KEY)
-    else:
-       FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN)
+       ASR_FACTORY_BIN = ASR_FACTORY_BIN[:-len(".bin")] + "_nokey.bin"
+
+    FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN)
 
     if platform.system() == 'Windows':
         cmd = [
@@ -407,7 +428,19 @@ def generate_factory_bin(args):
         ]
     subprocess.run(cmd)
 
-    logging.info('Generated the factory partition bin file : {}'.format(os.path.abspath(FILE_NAME)))
+    if (args.aes128_key is None):
+        logging.info('Generated the factory partition bin file : {}'.format(os.path.abspath(FILE_NAME)))
+    else:
+        ASR_FACTORY_BIN = ASR_FACTORY_BIN[:-len(".bin")] + "_encrypt.bin"
+        FILE_NAME_ENCRYPT = os.path.join(args.out, ASR_FACTORY_BIN)
+        encrypt_file(FILE_NAME, args.aes128_key, FILE_NAME_ENCRYPT)
+        os.remove(FILE_NAME)
+        if args.nokey:
+            PRI_KEY_ENCRYPT = FACTORY_DATA['dac-pri-key']['value'][:-len(".bin")] + "_encrypt.bin"
+            encrypt_file(FACTORY_DATA['dac-pri-key']['value'], args.aes128_key, PRI_KEY_ENCRYPT)
+            os.remove(FACTORY_DATA['dac-pri-key']['value'])
+            FACTORY_DATA['dac-pri-key']['value'] = PRI_KEY_ENCRYPT
+        logging.info('Generated the encrypted factory partition bin file : {}'.format(os.path.abspath(FILE_NAME_ENCRYPT)))
 
 def clean_up(args):
     os.remove(FACTORY_DATA['dac-cert']['value'])
@@ -416,10 +449,8 @@ def clean_up(args):
         os.remove(FACTORY_DATA['dac-pri-key']['value'])
 
 def generate_csv_log(args):
-    if args.nokey:
-        FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN_NO_KEY)
-    else:
-        FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN)
+    global ASR_FACTORY_BIN
+    FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN)
     CSV_FILE_NAME = os.path.join(args.out , '../', ASR_FACTORY_CSV)
 
     if args.qrcode:
@@ -436,9 +467,11 @@ def generate_csv_log(args):
         qr_file_path = 'none'
 
     if not os.path.exists(CSV_FILE_NAME):
-        csv_header = ["ID","Batch","VendorID","productID","Version","CommissioningFlow",\
-                    "RendezVousInformation","Discriminator","SetupPINCode",\
-                   "iteration_count","salt_len","factory_file1","factory_file2","QR_file","QR_code"]
+        csv_header = ["ID","Batch","VendorID","VendorName","productID","productName","Version",\
+                    "CommissioningFlow","RendezVousInformation","Discriminator","SetupPINCode",\
+                    "iteration_count","salt_len","mfg_date" "serial_num","hw_ver","hw_ver_str",\
+                    "product_url","product_label","part_number",\
+                    "factory_file1","factory_file2","QR_file","QR_code"]
         with open(CSV_FILE_NAME, 'w',newline='\n') as file_handler:
             csv_handler = csv.writer(file_handler)
             csv_handler.writerow(csv_header)
@@ -446,9 +479,10 @@ def generate_csv_log(args):
     if not args.nokey:
         FACTORY_DATA['dac-pri-key']['value'] = 'none'
 
-    csv_content = [args.chip_id,args.batch,hex(args.vendor_id)[2:],hex(args.product_id)[2:],\
-                args.version,args.commissioning_flow,args.discovery_mode,\
-                args.discriminator,args.passcode, args.iteration_count,args.salt_len,\
+    csv_content = [args.chip_id,args.batch,hex(args.vendor_id)[2:],args.vendor_name,hex(args.product_id)[2:],\
+                args.product_name, args.version,args.commissioning_flow,args.discovery_mode,\
+                args.discriminator,args.passcode, args.iteration_count,args.salt_len,args.mfg_date,\
+                args.serial_num,args.hw_ver,args.hw_ver_str,args.product_url,args.product_label,args.part_number,\
                 os.path.abspath(FILE_NAME),FACTORY_DATA['dac-pri-key']['value'],\
                 os.path.abspath(qr_file_path) ,chip_qrcode]
 
@@ -520,6 +554,10 @@ def main():
 
     parser.add_argument('--out', type=str, required=False, default="./out",
                         help='Output folder for factory files')
+
+    parser.add_argument("--aes128_key", type=str, required=False,
+                        help=('AES 128-bit key used to encrypt the whole factory files, '
+                              'provide 32-byte hex string, e.g. "1234567890abcdef1234567890abcdef"'))
 
     args = parser.parse_args()
     validate_args(args)
