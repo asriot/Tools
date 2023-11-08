@@ -34,6 +34,7 @@ import struct
 import qrcode
 import platform
 from ecdsa.curves import NIST256p
+from Crypto.Util.Padding import pad, unpad
 from Crypto.Cipher import AES
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -378,22 +379,16 @@ def generate_matter_csv(args):
 
     logging.info('Generated the factory partition csv file : {}'.format(os.path.abspath(out_csv_filename)))
 
-def aes_ECB_Encrypt(data , aes_key):
-    size = len(data)
-    # In case a aes128_key is given the data will be encrypted
-    # Always add a padding to be 16 bytes aligned
-    padding_len = size % 16
-    padding_len = 16 - padding_len
-    padding_bytes = bytearray(padding_len)
-    data += padding_bytes
-    cipher = AES.new(key=bytes.fromhex(aes_key), mode=AES.MODE_ECB)
-    return cipher.encrypt(data)
+def aes_ECB_Encrypt(data, key, key_size):
+    cipher = AES.new(key, AES.MODE_ECB)
+    data = cipher.encrypt(pad(data, key_size))
+    return (data)
 
 def encrypt_file(in_file, aes_key , out_file):
     with open(in_file, 'rb') as f:
         in_data = f.read()
-
-    out_data = aes_ECB_Encrypt(in_data, aes_key)
+    aes_key_bytes = bytes.fromhex(aes_key)
+    out_data = aes_ECB_Encrypt(in_data, aes_key_bytes, len(aes_key_bytes))
 
     with open(out_file, 'wb') as f:
         f.write(out_data)
@@ -406,38 +401,54 @@ def generate_factory_bin(args):
     if args.nokey:
        ASR_FACTORY_BIN = ASR_FACTORY_BIN[:-len(".bin")] + "_nokey.bin"
 
-    FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN)
-
     if platform.system() == 'Windows':
-        cmd = [
-            'gen_partition.exe',
-            '--asr_matter',
-            '--csv',
-            in_csv_filename,
-            '--out',
-            FILE_NAME,
-        ]
+        gen_partition_tool= 'gen_partition.exe'
     else:
+        gen_partition_tool= './gen_partition'
+
+    aes_key_size = 16
+    if (args.aes_key is None):
+        FILE_NAME = os.path.join(args.out, ASR_FACTORY_BIN)
         cmd = [
-            './gen_partition',
+            gen_partition_tool,
             '--asr_matter',
             '--csv',
             in_csv_filename,
             '--out',
             FILE_NAME,
         ]
-    subprocess.run(cmd)
-
-    if (args.aes128_key is None):
-        logging.info('Generated the factory partition bin file : {}'.format(os.path.abspath(FILE_NAME)))
     else:
         ASR_FACTORY_BIN = ASR_FACTORY_BIN[:-len(".bin")] + "_encrypt.bin"
         FILE_NAME_ENCRYPT = os.path.join(args.out, ASR_FACTORY_BIN)
-        encrypt_file(FILE_NAME, args.aes128_key, FILE_NAME_ENCRYPT)
-        os.remove(FILE_NAME)
+        aes_key_bytes = bytes.fromhex(args.aes_key)
+
+        if len(aes_key_bytes) == 16 :
+            aes_key_mode = "--aes128_key"
+        elif len(aes_key_bytes) == 32:
+            aes_key_mode = "--aes256_key"
+        else:
+            logging.error('aes key length %d is invalid', len(aes_key_bytes))
+            sys.exit(1)
+
+        cmd = [
+            gen_partition_tool,
+            '--asr_matter',
+            '--csv',
+            in_csv_filename,
+            '--out',
+            FILE_NAME_ENCRYPT,
+            aes_key_mode,
+            args.aes_key,
+        ]
+
+    subprocess.run(cmd)
+
+    if (args.aes_key is None):
+        logging.info('Generated the factory partition bin file : {}'.format(os.path.abspath(FILE_NAME)))
+    else:
         if args.nokey:
             PRI_KEY_ENCRYPT = FACTORY_DATA['dac-pri-key']['value'][:-len(".bin")] + "_encrypt.bin"
-            encrypt_file(FACTORY_DATA['dac-pri-key']['value'], args.aes128_key, PRI_KEY_ENCRYPT)
+            encrypt_file(FACTORY_DATA['dac-pri-key']['value'], args.aes_key, PRI_KEY_ENCRYPT)
             os.remove(FACTORY_DATA['dac-pri-key']['value'])
             FACTORY_DATA['dac-pri-key']['value'] = PRI_KEY_ENCRYPT
         logging.info('Generated the encrypted factory partition bin file : {}'.format(os.path.abspath(FILE_NAME_ENCRYPT)))
@@ -555,9 +566,9 @@ def main():
     parser.add_argument('--out', type=str, required=False, default="./out",
                         help='Output folder for factory files')
 
-    parser.add_argument("--aes128_key", type=str, required=False,
-                        help=('AES 128-bit key used to encrypt the whole factory files, '
-                              'provide 32-byte hex string, e.g. "1234567890abcdef1234567890abcdef"'))
+    parser.add_argument("--aes_key", type=str, required=False,
+                        help=('AES key used to encrypt the whole factory files, '
+                              'provide 16-byte or 32-byte hex, e.g. "1234567890abcdef1234567890abcdef"'))
 
     args = parser.parse_args()
     validate_args(args)
