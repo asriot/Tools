@@ -52,3 +52,7 @@ please make sure `ASR_TOOLCHAIN_PATH` is alreay export, then build lighting-app:
 
  - bootloader
  - ate
+
+## asr gen sign
+
+Adding RSA or ECDSA signatures to bootloader and firmware.
