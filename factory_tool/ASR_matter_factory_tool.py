@@ -200,6 +200,11 @@ def validate_args(args):
             logging.error('Invalid passcode:' + str(args.passcode))
             sys.exit(1)
 
+    if args.aes_key is not None:
+        if ((len(args.aes_key) != 16 ) and (len(args.aes_key) != 32 )):
+            logging.error('Invalid aes_key length. 16-byte or 32-byte hex.')
+            sys.exit(1)
+
     check_int_range(args.discriminator, 0x0000, 0x0FFF, 'Discriminator')
     check_int_range(args.product_id, 0x0000, 0xFFFF, 'Product id')
     check_int_range(args.vendor_id, 0x0000, 0xFFFF, 'Vendor id')
@@ -480,7 +485,7 @@ def generate_csv_log(args):
     if not os.path.exists(CSV_FILE_NAME):
         csv_header = ["ID","Batch","VendorID","VendorName","productID","productName","Version",\
                     "CommissioningFlow","RendezVousInformation","Discriminator","SetupPINCode",\
-                    "iteration_count","salt_len","mfg_date" "serial_num","hw_ver","hw_ver_str",\
+                    "iteration_count","salt_len","mfg_date","serial_num","hw_ver","hw_ver_str",\
                     "product_url","product_label","part_number",\
                     "factory_file1","factory_file2","QR_file","QR_code"]
         with open(CSV_FILE_NAME, 'w',newline='\n') as file_handler:
@@ -491,11 +496,13 @@ def generate_csv_log(args):
         FACTORY_DATA['dac-pri-key']['value'] = 'none'
 
     csv_content = [args.chip_id,args.batch,hex(args.vendor_id)[2:],args.vendor_name,hex(args.product_id)[2:],\
-                args.product_name, args.version,args.commissioning_flow,args.discovery_mode,\
-                args.discriminator,args.passcode, args.iteration_count,args.salt_len,args.mfg_date,\
-                args.serial_num,args.hw_ver,args.hw_ver_str,args.product_url,args.product_label,args.part_number,\
-                os.path.abspath(FILE_NAME),FACTORY_DATA['dac-pri-key']['value'],\
-                os.path.abspath(qr_file_path) ,chip_qrcode]
+            args.product_name, args.version,args.commissioning_flow,args.discovery_mode,\
+            args.discriminator,args.passcode, args.iteration_count,args.salt_len,args.mfg_date,\
+            args.serial_num,args.hw_ver,args.hw_ver_str,args.product_url,args.product_label,args.part_number,\
+            os.path.join(os.path.basename(os.path.dirname(FILE_NAME)), os.path.basename(FILE_NAME)),\
+            os.path.join(os.path.basename(os.path.dirname(FACTORY_DATA['dac-pri-key']['value'])), os.path.basename(FACTORY_DATA['dac-pri-key']['value'])),\
+            os.path.join(os.path.basename(os.path.dirname(qr_file_path)), os.path.basename(qr_file_path)),\
+            chip_qrcode]
 
     with open(CSV_FILE_NAME, 'a', newline='\n') as file_handler:
         csv_handler = csv.writer(file_handler)
