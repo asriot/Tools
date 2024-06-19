@@ -181,6 +181,16 @@ FACTORY_DATA = {
         'encoding': 'string',
         'value': None,
     },
+    'qrcode': {
+        'type': 'data',
+        'encoding': 'string',
+        'value': None,
+    },
+    'manual-code': {
+        'type': 'data',
+        'encoding': 'string',
+        'value': None,
+    },
 }
 
 def check_str_range(s, min_len, max_len, name):
@@ -234,14 +244,16 @@ def generate_onboarding_data(args):
                                     flow=args.commissioning_flow,
                                     vid=args.vendor_id,
                                     pid=args.product_id)
-
-    logging.info('Generated QR code: ' + setup_payload.generate_qrcode())
-    logging.info('Generated manual code: ' + setup_payload.generate_manualcode())
-    with open(os.path.join(args.out, ASR_FACTORY_QR_TXT), "w") as manual_code_file:
-        manual_code_file.write("Manualcode : " + setup_payload.generate_manualcode() + "\n")
-        manual_code_file.write("QRCode : " + setup_payload.generate_qrcode())
-    qr = qrcode.make(setup_payload.generate_qrcode())
-    qr.save(os.path.join(args.out, ASR_FACTORY_QR))
+    FACTORY_DATA['qrcode']['value'] = setup_payload.generate_qrcode()
+    FACTORY_DATA['manual-code']['value'] = setup_payload.generate_manualcode()
+    if args.qrcode:
+        logging.info('Generated QR code: ' + FACTORY_DATA['qrcode']['value'])
+        logging.info('Generated manual code: ' + FACTORY_DATA['manual-code']['value'])
+        with open(os.path.join(args.out, ASR_FACTORY_QR_TXT), "w") as manual_code_file:
+            manual_code_file.write("Manualcode : " + FACTORY_DATA['manual-code']['value'] + "\n")
+            manual_code_file.write("QRCode : " + FACTORY_DATA['qrcode']['value'])
+        qr = qrcode.make(FACTORY_DATA['qrcode']['value'])
+        qr.save(os.path.join(args.out, ASR_FACTORY_QR))
 
 ##################### Spake2p #####################
 # Length of `w0s` and `w1s` elements
@@ -470,13 +482,7 @@ def generate_csv_log(args):
     CSV_FILE_NAME = os.path.join(args.out , '../', ASR_FACTORY_CSV)
 
     if args.qrcode:
-        setup_payload = SetupPayload(discriminator=args.discriminator,
-                                        pincode=args.passcode,
-                                        rendezvous=args.discovery_mode,
-                                        flow=args.commissioning_flow,
-                                        vid=args.vendor_id,
-                                        pid=args.product_id)
-        chip_qrcode = setup_payload.generate_qrcode()
+        chip_qrcode = FACTORY_DATA['qrcode']['value']
         qr_file_path = os.path.join(args.out, ASR_FACTORY_QR)
     else:
         chip_qrcode = 'none'
@@ -584,12 +590,11 @@ def main():
     convert_x509_cert_from_pem_to_der(args.dac_cert, FACTORY_DATA['dac-cert']['value'])
     generate_keypair_bin(args.dac_key, FACTORY_DATA['dac-pri-key']['value'], FACTORY_DATA['dac-pub-key']['value'])
 
+    generate_onboarding_data(args)
+
     generate_matter_csv(args)
 
     generate_factory_bin(args)
-
-    if args.qrcode:
-        generate_onboarding_data(args)
 
     clean_up(args)
 
